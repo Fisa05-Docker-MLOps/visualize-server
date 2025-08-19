@@ -22,28 +22,20 @@ REGISTERED_MODEL_NAME = "BTC_LSTM_Production"
 # --- 사이드바 UI ---
 st.sidebar.title("📈 모델 예측 제어")
 
-@st.cache_data(ttl=60) # 1분마다 캐시 갱신
+# --- 모델 별칭 한 번만 받아오기 ---
 def get_model_aliases():
     """ GET '/aliases' api로 alias 가져오기 """
     try:
-        # api에서 가져오는 로직
-        # 추론 서버에 alias 요청
-        api_endpoint = f"{INFERENCE_SERVER_URL}/aliases"
-        response = requests.get(api_endpoint, timeout=120)
+        response = requests.get(f"{INFERENCE_SERVER_URL}/aliases", timeout=120)
         response.raise_for_status()
-        
-        aliases = response.json()
-
-        if not aliases:
-            st.sidebar.warning("등록된 모델 별칭이 없습니다.")
-            return ["backtest_20250531"] # 샘플 데이터용 기본 별칭
-        return aliases
+        data = response.json()  # dict
+        return data.get("aliases", [])
     except Exception as e:
         st.sidebar.error(f"alias 연결 실패: {e}")
-        # DB 연결 실패 시에도 샘플 별칭을 반환하여 앱이 멈추지 않도록 함
         return ["backtest_20250531"]
 
-model_aliases = get_model_aliases().get("aliases", [])
+# 앱 시작 시 한 번만 실행
+model_aliases = get_model_aliases()
 model_aliases_prefix = list(map(lambda x: x.removeprefix('backtest_'), model_aliases))
 
 # 챔피언 모델의 예측치 보여주는 버튼
